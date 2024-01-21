@@ -6,9 +6,12 @@ import com.qi.search.common.ErrorCode;
 import com.qi.search.common.ResultUtils;
 import com.qi.search.exception.BusinessException;
 import com.qi.search.exception.ThrowUtils;
+import com.qi.search.model.dto.picture.PictureQueryRequest;
 import com.qi.search.model.dto.user.UserQueryRequest;
+import com.qi.search.model.entity.Picture;
 import com.qi.search.model.entity.User;
 import com.qi.search.model.vo.UserVO;
+import com.qi.search.service.PictureService;
 import com.qi.search.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,30 +34,24 @@ import java.util.List;
 public class PictureController {
 
     @Resource
-    private UserService userService;
+    private PictureService pictureService;
 
     /**
      * 分页获取用户封装列表
      *
-     * @param userQueryRequest
+     * @param pictureQueryRequest
      * @param request
      * @return
      */
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<UserVO>> listUserVOByPage(@RequestBody UserQueryRequest userQueryRequest,
+    public BaseResponse<Page<Picture>> listUserVOByPage(@RequestBody PictureQueryRequest pictureQueryRequest,
                                                        HttpServletRequest request) {
-        if (userQueryRequest == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
-        long current = userQueryRequest.getCurrent();
-        long size = userQueryRequest.getPageSize();
+        long current = pictureQueryRequest.getCurrent();
+        long size = pictureQueryRequest.getPageSize();
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
-        Page<User> userPage = userService.page(new Page<>(current, size),
-                userService.getQueryWrapper(userQueryRequest));
-        Page<UserVO> userVOPage = new Page<>(current, size, userPage.getTotal());
-        List<UserVO> userVO = userService.getUserVO(userPage.getRecords());
-        userVOPage.setRecords(userVO);
-        return ResultUtils.success(userVOPage);
+        String searchText = pictureQueryRequest.getSearchText();
+        Page<Picture> picturePage = pictureService.searchPicture(searchText, current, size);
+        return ResultUtils.success(picturePage);
     }
 }
